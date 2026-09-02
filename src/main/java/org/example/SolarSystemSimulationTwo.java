@@ -15,12 +15,9 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
 
     static AppSettings settings = new AppSettings(true);
 
-    Body star;
-    Body planet_1;
-    Body planet_2;
 
-    Body planet_3;
     float g = 1f;
+    float timeScale = 10f;
 
     private List<Body> bodies = new ArrayList<>();
     public static void main(String[] args) {
@@ -43,17 +40,54 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
 //        setupPlanetCycleKeys();
     }
 
-    public void initPlanets(){
-        star = new Body(100, 6f, new Vector3f(0, 0, 0), assetManager, g);
+    private Body scenario1(){
+        Body star = new Body(1000, 6f, new Vector3f(0, 0, 0), assetManager, g);
 
-        planet_1 = new Body(5f, 1f, new Vector3f(80, 0, 0), assetManager, g);
-        planet_2 = new Body(1, 3f, new Vector3f(-80, 0, 0), assetManager, g);
-        planet_3 = new Body(10f, 1f, new Vector3f(120, 0, 0), assetManager, g);
+        Body planet_1 = new Body(10f, 3f, new Vector3f(80, 0, 0), assetManager, g);
+        Body planet_2 = new Body(.0002f, 2f, new Vector3f(86, 0, 0), assetManager, g);
+        Body planet_3 = new Body(.0001f, 1f, new Vector3f(74, 0, 0), assetManager, g);
+
+        Body planet_4 = new Body(18f, 3f, new Vector3f(-60, 0, 0), assetManager, g);
+
+        planet_1.addMoon(planet_2);
+        planet_1.addMoon(planet_3);
 
         bodies.add(planet_1);
         bodies.add(planet_2);
         bodies.add(planet_3);
+        bodies.add(planet_4);
         bodies.add(star);
+
+        return star;
+    }
+
+    private Body scenario2(){
+        Body star = new Body(1000, 6f, new Vector3f(0, 0, 0), assetManager, g);
+
+        Body planet_1 = new Body(10f, 3f, new Vector3f(80, 0, 0), assetManager, g);
+        Body moon_1 = new Body(.0002f, 2f, new Vector3f(84, 0, 0), assetManager, g);
+        Body moon_2 = new Body(.0001f, 1f, new Vector3f(76, 0, 0), assetManager, g);
+
+        Body planet_4 = new Body(12f, 3f, new Vector3f(-60, 0, 0), assetManager, g);
+        Body moon_3 = new Body(.0001f, 1f, new Vector3f(-62, 0, 0), assetManager, g);
+
+        planet_1.addMoon(moon_1);
+        planet_1.addMoon(moon_2);
+        planet_4.addMoon(moon_3);
+
+        bodies.add(planet_1);
+        bodies.add(moon_1);
+        bodies.add(moon_2);
+        bodies.add(planet_4);
+        bodies.add(moon_3);
+        bodies.add(star);
+
+        return star;
+    }
+
+    public void initPlanets(){
+
+        Body star = scenario2();
 
         for (Body b : bodies){
 
@@ -69,9 +103,24 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
 
         }
 
-        star.currentVelocity = (new Vector3f(.1f, 0, 0));
+        star.currentVelocity = (new Vector3f(0.1f, 0, 0));
 
+        for (Body b : bodies){
+            if (!b.moons.isEmpty()){
+                for (Body m : b.moons){
+                    Vector3f radius =  m.g.getLocalTranslation().subtract(b.g.getLocalTranslation());
 
+                    float distance = radius.length();
+
+                    float speed = (float) Math.sqrt(g * b.mass / distance);
+
+                    Vector3f tangent = new Vector3f(-radius.z,0,radius.x).normalizeLocal();
+
+                    m.currentVelocity = b.currentVelocity.add(tangent.mult(speed));
+                }
+
+            }
+        }
 
 
 
@@ -98,7 +147,7 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
 
     @Override
     public void simpleUpdate(float tpf) {
-        float timeScale = 100f;
+
         for (Body b : bodies){
             b.updateVelocity(bodies, tpf*timeScale);
         }

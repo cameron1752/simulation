@@ -25,24 +25,12 @@ public class Body {
     private float b;
     float angle = 0;
     float T = 0;
-    Star sun;
+    List<Body> moons;
 //    final float g_constant = 0.000000000066740f;
     float g_constant = 1f;
     private Geometry orbitLine;
     private Mesh orbitMesh;
     private List<Vector3f> orbitPoints = new ArrayList<>();
-// new calc
-    private Vector3f r;
-    private float r_mag;
-    private Vector3f v;
-    private float v_mag;
-    private Vector3f h;
-    private float h_mag;
-    private float mu;
-    private float e;
-    private float E;
-    private float p;
-    float e_given;
 
     Vector3f currentVelocity;
 
@@ -51,7 +39,7 @@ public class Body {
         this.radius = radius;
         this.assetManager = assetManager;
         this.g_constant = g_constant;
-
+        moons = new ArrayList<>();
         material = new Material(this.assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         material.setColor("Color", ColorRGBA.randomColor());
 
@@ -62,6 +50,10 @@ public class Body {
         g.setLocalTranslation(initialPosition);
 
 
+    }
+
+    public void addMoon(Body moon){
+        moons.add(moon);
     }
 
     public Geometry getGeometry(){
@@ -103,34 +95,6 @@ public class Body {
         g.setLocalTranslation(position);
         updateOrbitLine(g.getLocalTranslation());
     }
-    private float getMagnitude(Vector3f vector){
-        return (float) Math.sqrt((vector.x * vector.x) + (vector.y * vector.y) + (vector.z * vector.z));
-    }
-
-
-    public Vector3f subtract(Vector3f v1, Vector3f v2){
-        return new Vector3f(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
-    }
-    private Vector3f getDistance(float tpf){
-        Vector3f position = g.getLocalTranslation();
-
-//        angle += (360 / T); // iterate the angle based on period * time per frame
-        angle += 1;
-        float radians = (float) Math.toRadians(angle);
-
-        float x = (float) (r(radians) * Math.cos(radians));
-        float z = (float) (r(radians) * Math.sin(radians));
-
-        position.x = x;
-        position.z = z;
-        System.out.println(position);
-        return position;
-    }
-
-    private float r(float radians){
-        return (float) (p / (1 + (e * Math.cos(radians))));
-    }
-
 
 
     public Geometry createOrbitLine() {
