@@ -14,42 +14,45 @@ import java.util.List;
 import java.util.Vector;
 
 public class Body {
-    float gravity;
+    String name;
     float mass;
     float radius;
     AssetManager assetManager;
     ColorRGBA color;
     Material material;
     Geometry g;
-    private float a;
-    private float b;
-    float angle = 0;
-    float T = 0;
     List<Body> moons;
 //    final float g_constant = 0.000000000066740f;
-    float g_constant = 1f;
+    float g_constant;
     private Geometry orbitLine;
     private Mesh orbitMesh;
     private List<Vector3f> orbitPoints = new ArrayList<>();
+    boolean isStar = false;
 
     Vector3f currentVelocity;
 
-    public Body( float mass, float radius, Vector3f initialPosition, AssetManager assetManager, float g_constant){
+    public Body(String name, float mass, float radius, Vector3f initialPosition, AssetManager assetManager, float g_constant, ColorRGBA color){
+        this.name = name;
         this.mass = mass;
         this.radius = radius;
         this.assetManager = assetManager;
         this.g_constant = g_constant;
+        this.color = color;
+        // initialize moon list
         moons = new ArrayList<>();
-        material = new Material(this.assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        material.setColor("Color", ColorRGBA.randomColor());
 
+        // set color
+        material = new Material(this.assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        material.setColor("Color", color);
+
+        // initialize geometry object
         Sphere s = new Sphere(25, 25, radius);
         g = new Geometry("Object", s);
+
+        // set color to geometry
         g.setMaterial(material);
 
         g.setLocalTranslation(initialPosition);
-
-
     }
 
     public void addMoon(Body moon){
@@ -78,6 +81,8 @@ public class Body {
                 currentVelocity.addLocal(
                         direction.mult(acceleration * tpf)
                 );
+
+
 
             }
         }
@@ -122,6 +127,31 @@ public class Body {
         orbitMesh.setBuffer(VertexBuffer.Type.Position, 3, positions);
         orbitMesh.updateBound();
         orbitMesh.updateCounts();
+    }
+
+    @Override
+    public String toString(){
+        // object name
+        // moons?
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("---------------------------------").append("\n");
+        sb.append("Name: ").append(name).append("\n");
+        sb.append("Mass: ").append(mass).append("\n");
+        sb.append("Radius: ").append(radius).append("\n");
+        sb.append("Color: ").append(color).append("\n");
+        sb.append("Current Position: ").append(g.getLocalTranslation()).append("\n");
+        sb.append("Current Velocity: ").append(currentVelocity).append("\n");
+
+        if (!moons.isEmpty()){
+            sb.append("Moons: ").append("\n");
+            for (Body m : moons){
+                sb.append(m.toString()).append("\n");
+            }
+        } else {
+            sb.append("---------------------------------").append("\n");
+        }
+        return sb.toString();
     }
 
 }
