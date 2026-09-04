@@ -6,11 +6,15 @@ import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
 import com.jme3.input.controls.*;
+import com.jme3.light.AmbientLight;
+import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Ray;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
+import com.jme3.post.FilterPostProcessor;
+import com.jme3.post.filters.BloomFilter;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Geometry;
@@ -19,6 +23,7 @@ import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.system.AppSettings;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,17 +35,24 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
     float g = 1f;
     float timeScale = 10f;
     private boolean paused = false;
-    Body star;
+    Sun star;
     float cameraHeight = 1000f;
     BitmapText debugText;
-
+    private Node planetPreviewNode;
+    private Camera previewCamera;
+    private ViewPort previewViewPort;
+    boolean zoomOn;
+    Vector3f starPosition;
     private List<Body> bodies = new ArrayList<>();
+    Scenario scenario;
+
     public static void main(String[] args) {
 
         SolarSystemSimulationTwo app = new SolarSystemSimulationTwo();
 
         settings.setTitle("My Awesome Game");
-        settings.setResolution(1920, 1080);
+        settings.setResolution(2560, 1440);
+        settings.setFullscreen(true);
         app.setSettings(settings);
 
         app.start();
@@ -48,227 +60,49 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
     }
     @Override
     public void simpleInitApp() {
-        initCamera();
-        setTopDownView();
-        initPlanets();
-        setupPauseKey();
-        initDebugText();
-        initPlanetPreview();
-    }
+        scenario = new Scenario(this.assetManager, g);
 
-    private Node planetPreviewNode;
-    private Camera previewCamera;
-    private ViewPort previewViewPort;
 
-    private Body scenario1(){
-        Body star = new Body("star", 1000, 6f, new Vector3f(0, 0, 0), assetManager, g, ColorRGBA.randomColor());
-
-        Body planet_1 = new Body("planet_1", 10f, 3f, new Vector3f(80, 0, 0), assetManager, g, ColorRGBA.randomColor());
-        Body moon_1 = new Body("moon_1", .0002f, 2f, new Vector3f(86, 0, 0), assetManager, g, ColorRGBA.randomColor());
-        Body moon_2 = new Body("moon_2", .0001f, 1f, new Vector3f(74, 0, 0), assetManager, g, ColorRGBA.randomColor());
-
-        Body planet_4 = new Body("planet_4", 18f, 3f, new Vector3f(-60, 0, 0), assetManager, g, ColorRGBA.randomColor());
-
-        planet_1.addMoon(moon_1);
-        planet_1.addMoon(moon_2);
-
-        bodies.add(planet_1);
-        bodies.add(moon_1);
-        bodies.add(moon_2);
-        bodies.add(planet_4);
-        bodies.add(star);
-
-        return star;
-    }
-
-    private Body scenario2(){
-        Body star = new Body("star", 1000, 6f, new Vector3f(0, 0, 0), assetManager, g, ColorRGBA.randomColor());
-
-        Body planet_1 = new Body("planet_1", 10f, 3f, new Vector3f(80, 0, 0), assetManager, g, ColorRGBA.randomColor());
-        Body moon_1 = new Body("moon_1", .0002f, 2f, new Vector3f(84, 0, 0), assetManager, g, ColorRGBA.randomColor());
-        Body moon_2 = new Body("moon_2", .0001f, 1f, new Vector3f(76, 0, 0), assetManager, g, ColorRGBA.randomColor());
-
-        Body planet_4 = new Body("planet_4", 12f, 3f, new Vector3f(-60, 0, 0), assetManager, g, ColorRGBA.randomColor());
-        Body moon_3 = new Body("moon_3", .0001f, 1f, new Vector3f(-62, 0, 0), assetManager, g, ColorRGBA.randomColor());
-
-        planet_1.addMoon(moon_1);
-        planet_1.addMoon(moon_2);
-        planet_4.addMoon(moon_3);
-
-        bodies.add(planet_1);
-        bodies.add(moon_1);
-        bodies.add(moon_2);
-        bodies.add(planet_4);
-        bodies.add(moon_3);
-        bodies.add(star);
-
-        return star;
-    }
-
-    private Body scenario3(){
-        Body star = new Body("star", 1000000, 6f, new Vector3f(0, 0, 0), assetManager, g, ColorRGBA.Yellow);
-
-        Body mercury = new Body("mercury", .055f, 2f, new Vector3f(19.35f, 0, 33.51f), assetManager, g, ColorRGBA.Gray);
-        Body venus = new Body("venus", .815f, 2.5f, new Vector3f(-36.15f, 0, 62.61f), assetManager, g, new ColorRGBA(0.9f, 0.7f, 0.3f, 1f));
-
-        Body earth = new Body("earth", 1f, 3f, new Vector3f(0, 0, 100), assetManager, g, ColorRGBA.Blue);
-        Body moon = new Body("moon", .0123f, 1.5f, new Vector3f(0.26f, 0, 100), assetManager, g, ColorRGBA.LightGray);
-
-        Body mars = new Body("mars", .107f, 2.5f, new Vector3f(-107.48f, 0, -107.48f), assetManager, g, ColorRGBA.Red);
-        Body phobos = new Body("phobos", .0000017f, 1f, new Vector3f(-107.477f, 0, -107.48f), assetManager, g, ColorRGBA.DarkGray);
-        Body deimos = new Body("deimos", .00000025f, 1f, new Vector3f(-107.472f, 0, -107.48f), assetManager, g, ColorRGBA.Gray);
-
-        Body jupiter = new Body("jupiter", 317.8f, 5f, new Vector3f(0, 0, 520), assetManager, g, new ColorRGBA(0.8f, 0.5f, 0.25f, 1f));
-        Body io = new Body("io", .015f, 1f, new Vector3f(0.022f, 0, 520), assetManager, g, ColorRGBA.Yellow);
-        Body europa = new Body("europa", .008f, 1f, new Vector3f(0.035f, 0, 520), assetManager, g, ColorRGBA.White);
-        Body ganymede = new Body("ganymede", .025f, 1.2f, new Vector3f(0.056f, 0, 520), assetManager, g, ColorRGBA.Gray);
-        Body callisto = new Body("callisto", .018f, 1f, new Vector3f(0.098f, 0, 520), assetManager, g, ColorRGBA.DarkGray);
-
-        Body saturn = new Body("saturn", 95.2f, 4.5f, new Vector3f(673.58f, 0, -673.58f), assetManager, g, new ColorRGBA(0.85f, 0.75f, 0.45f, 1f));
-        Body rhea = new Body("rhea", .0004f, 1f, new Vector3f(673.615f, 0, -673.58f), assetManager, g, ColorRGBA.LightGray);
-        Body titan = new Body("titan", .0225f, 1.5f, new Vector3f(673.661f, 0, -673.58f), assetManager, g, new ColorRGBA(0.85f, 0.55f, 0.25f, 1f));
-        Body iapetus = new Body("iapetus", .00023f, 1f, new Vector3f(673.81f, 0, -673.58f), assetManager, g, ColorRGBA.Gray);
-
-        Body uranus = new Body("uranus", 14.5f, 4f, new Vector3f(-1920, 0, 0), assetManager, g, ColorRGBA.Cyan);
-        Body titania = new Body("titania", .000059f, 1f, new Vector3f(-1919.95f, 0, 0), assetManager, g, ColorRGBA.LightGray);
-        Body oberon = new Body("oberon", .00005f, 1f, new Vector3f(-1919.925f, 0, 0), assetManager, g, ColorRGBA.Gray);
-
-        Body neptune = new Body("neptune", 17.1f, 4f, new Vector3f(1500, 0, 2598.08f), assetManager, g, new ColorRGBA(0.15f, 0.3f, 0.9f, 1f));
-        Body triton = new Body("triton", .00358f, 1f, new Vector3f(1500.031f, 0, 2598.08f), assetManager, g, ColorRGBA.LightGray);
-
-        earth.addMoon(moon);
-
-        mars.addMoon(phobos);
-        mars.addMoon(deimos);
-
-        jupiter.addMoon(io);
-        jupiter.addMoon(europa);
-        jupiter.addMoon(ganymede);
-        jupiter.addMoon(callisto);
-
-        saturn.addMoon(rhea);
-        saturn.addMoon(titan);
-        saturn.addMoon(iapetus);
-
-        uranus.addMoon(titania);
-        uranus.addMoon(oberon);
-
-        neptune.addMoon(triton);
-
-        bodies.add(mercury);
-        bodies.add(venus);
-        bodies.add(earth);
-        bodies.add(moon);
-        bodies.add(mars);
-        bodies.add(phobos);
-        bodies.add(deimos);
-        bodies.add(jupiter);
-        bodies.add(io);
-        bodies.add(europa);
-        bodies.add(ganymede);
-        bodies.add(callisto);
-        bodies.add(saturn);
-        bodies.add(rhea);
-        bodies.add(titan);
-        bodies.add(iapetus);
-        bodies.add(uranus);
-        bodies.add(titania);
-        bodies.add(oberon);
-        bodies.add(neptune);
-        bodies.add(triton);
-        bodies.add(star);
-
-        return star;
-    }
-
-    private Body scenario4(){
-        Body star = new Body("star", 1000000, 6f, new Vector3f(0, 0, 0), assetManager, g, ColorRGBA.Yellow);
-
-        Body mercury = new Body("mercury", .055f, 2f, new Vector3f(38.7f, 0, 0), assetManager, g, ColorRGBA.Gray);
-        Body venus = new Body("venus", .815f, 2.5f, new Vector3f(0, 0, 72.3f), assetManager, g, new ColorRGBA(0.9f, 0.7f, 0.3f, 1f));
-
-        Body earth = new Body("earth", 1f, 3f, new Vector3f(-100, 0, 0), assetManager, g, ColorRGBA.Blue);
-        Body moon = new Body("moon", .0123f, 1.5f, new Vector3f(-99.74f, 0, 0), assetManager, g, ColorRGBA.LightGray);
-
-        Body mars = new Body("mars", .107f, 2.5f, new Vector3f(0, 0, -152), assetManager, g, ColorRGBA.Red);
-        Body phobos = new Body("phobos", .0000017f, 1f, new Vector3f(.003f, 0, -152), assetManager, g, ColorRGBA.DarkGray);
-        Body deimos = new Body("deimos", .00000025f, 1f, new Vector3f(.008f, 0, -152), assetManager, g, ColorRGBA.Gray);
-
-        // Jupiter deliberately placed at a different angle
-        Body jupiter = new Body("jupiter", 317.8f, 5f, new Vector3f(-368.71f, 0, 368.71f), assetManager, g, new ColorRGBA(0.8f, 0.5f, 0.25f, 1f));
-        Body io = new Body("io", .015f, 1f, new Vector3f(-368.688f, 0, 368.71f), assetManager, g, ColorRGBA.Yellow);
-        Body europa = new Body("europa", .008f, 1f, new Vector3f(-368.675f, 0, 368.71f), assetManager, g, ColorRGBA.White);
-        Body ganymede = new Body("ganymede", .025f, 1.2f, new Vector3f(-368.654f, 0, 368.71f), assetManager, g, ColorRGBA.Gray);
-        Body callisto = new Body("callisto", .018f, 1f, new Vector3f(-368.612f, 0, 368.71f), assetManager, g, ColorRGBA.DarkGray);
-
-        Body saturn = new Body("saturn", 95.2f, 4.5f, new Vector3f(673.58f, 0, 673.58f), assetManager, g, new ColorRGBA(0.85f, 0.75f, 0.45f, 1f));
-        Body rhea = new Body("rhea", .0004f, 1f, new Vector3f(673.615f, 0, 673.58f), assetManager, g, ColorRGBA.LightGray);
-        Body titan = new Body("titan", .0225f, 1.5f, new Vector3f(673.661f, 0, 673.58f), assetManager, g, new ColorRGBA(0.85f, 0.55f, 0.25f, 1f));
-        Body iapetus = new Body("iapetus", .00023f, 1f, new Vector3f(673.81f, 0, 673.58f), assetManager, g, ColorRGBA.Gray);
-
-        Body uranus = new Body("uranus", 14.5f, 4f, new Vector3f(-1920, 0, 0), assetManager, g, ColorRGBA.Cyan);
-        Body titania = new Body("titania", .000059f, 1f, new Vector3f(-1919.95f, 0, 0), assetManager, g, ColorRGBA.LightGray);
-        Body oberon = new Body("oberon", .00005f, 1f, new Vector3f(-1919.925f, 0, 0), assetManager, g, ColorRGBA.Gray);
-
-        Body neptune = new Body("neptune", 17.1f, 4f, new Vector3f(1500, 0, -2598.08f), assetManager, g, new ColorRGBA(0.15f, 0.3f, 0.9f, 1f));
-        Body triton = new Body("triton", .00358f, 1f, new Vector3f(1500.031f, 0, -2598.08f), assetManager, g, ColorRGBA.LightGray);
+        try {
+            initCamera();
+            setTopDownView();
+            initPlanets();
+            setupPauseKey();
+            initDebugText();
+            initPlanetPreview();
+            initLighting();
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
 
 
 
-        earth.addMoon(moon);
-
-        mars.addMoon(phobos);
-        mars.addMoon(deimos);
-
-        jupiter.addMoon(io);
-        jupiter.addMoon(europa);
-        jupiter.addMoon(ganymede);
-        jupiter.addMoon(callisto);
-
-        saturn.addMoon(rhea);
-        saturn.addMoon(titan);
-        saturn.addMoon(iapetus);
-
-        uranus.addMoon(titania);
-        uranus.addMoon(oberon);
-
-        neptune.addMoon(triton);
-
-        bodies.add(mercury);
-        bodies.add(venus);
-        bodies.add(earth);
-        bodies.add(moon);
-        bodies.add(mars);
-        bodies.add(phobos);
-        bodies.add(deimos);
-        bodies.add(jupiter);
-        bodies.add(io);
-        bodies.add(europa);
-        bodies.add(ganymede);
-        bodies.add(callisto);
-        bodies.add(saturn);
-        bodies.add(rhea);
-        bodies.add(titan);
-        bodies.add(iapetus);
-        bodies.add(uranus);
-        bodies.add(titania);
-        bodies.add(oberon);
-        bodies.add(neptune);
-        bodies.add(triton);
-        bodies.add(star);
-
-        return star;
     }
 
 
-    public void initPlanets(){
-//        star = scenario1();
-        star = scenario2();
+    public void initLighting(){
+        DirectionalLight sun = new DirectionalLight();
+        sun.setDirection(new Vector3f(-0.5f, -0.5f, -0.5f).normalizeLocal());
+        sun.setColor(ColorRGBA.White);
+        rootNode.addLight(sun);
 
-//        star = scenario3();
-//        star = scenario4();
+        AmbientLight ambient = new AmbientLight();
+        ambient.setColor(ColorRGBA.White.mult(0.3f));
+        rootNode.addLight(ambient);
 
-        star.isStar = true;
+        FilterPostProcessor fpp = new FilterPostProcessor(assetManager);
+        BloomFilter bloom = new BloomFilter(BloomFilter.GlowMode.Objects);
+        fpp.addFilter(bloom);
+        viewPort.addProcessor(fpp);
+    }
+
+
+    public void initPlanets() throws InvocationTargetException, IllegalAccessException {
+
+        bodies = scenario.getRandomScenario();
+//        bodies = scenario.getScenario(8);
+
+        star = scenario.star;
 
         for (Body b : bodies){
 
@@ -303,9 +137,6 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
             }
         }
 
-
-
-
         for (Body b : bodies){
             rootNode.attachChild(b.getGeometry());
             rootNode.attachChild(b.createOrbitLine());
@@ -337,6 +168,7 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
         cam.lookAt(Vector3f.ZERO, Vector3f.UNIT_Z); // look straight down, "up" reference along Z since Y is now forward
         cam.update();
         flyCam.setMoveSpeed(50f);
+        cam.setFrustumFar(10000f);
     }
 
     @Override
@@ -348,19 +180,29 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
 
             for (Body b : bodies) {
                 b.updatePosition(tpf * timeScale);
+                b.g.rotate(0,.01f, 0);
             }
         }
 
-        Vector3f starPosition = star.g.getLocalTranslation();
-        cam.setLocation(new Vector3f(
-                starPosition.x,
-                starPosition.y + cameraHeight,
-                starPosition.z
-        ));
-        cam.lookAt(starPosition, Vector3f.UNIT_Z);
 
+
+        if (!zoomOn){
+            starPosition = star.g.getLocalTranslation();
+            cam.setLocation(new Vector3f(
+                    starPosition.x,
+                    starPosition.y + cameraHeight,
+                    starPosition.z
+            ));
+            cam.lookAt(starPosition, Vector3f.UNIT_Z);
+        }
+
+        planetPreviewNode.rotate(0, .01f, 0);
         planetPreviewNode.updateGeometricState();
     }
+
+    // default to look at star
+    // on zoom in I want to zoom on mouse
+    // do not want it to follow the mouse
 
     private void initPlanetPreview() {
         planetPreviewNode = new Node("PlanetPreview");
@@ -392,6 +234,15 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
         previewViewPort.setClearFlags(true, true, true);
         previewViewPort.setBackgroundColor(ColorRGBA.DarkGray);
 
+        AmbientLight ambient = new AmbientLight();
+        ambient.setColor(ColorRGBA.White.mult(0.3f));
+        planetPreviewNode.addLight(ambient);
+
+        FilterPostProcessor fpp = new FilterPostProcessor(assetManager);
+        BloomFilter bloom = new BloomFilter(BloomFilter.GlowMode.Objects);
+        fpp.addFilter(bloom);
+        previewViewPort.addProcessor(fpp);
+
         previewViewPort.attachScene(planetPreviewNode);
 
         previewViewPort.setEnabled(false);
@@ -408,12 +259,9 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
                 sphere
         );
 
-        Material previewMaterial = new Material(
-                assetManager,
-                "Common/MatDefs/Misc/Unshaded.j3md"
-        );
+        Material previewMaterial = body.material;
 
-        previewMaterial.setColor("Color", body.color);
+//        previewMaterial.setColor("Color", body.color);
         previewPlanet.setMaterial(previewMaterial);
 
         previewPlanet.setLocalTranslation(Vector3f.ZERO);
@@ -429,14 +277,7 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
 
         previewViewPort.setEnabled(true);
     }
-
-    private void removePlanetPreview(){
-        planetPreviewNode.detachAllChildren();
-        planetPreviewNode.updateGeometricState();
-        previewViewPort.setEnabled(false);
-        debugText.setText("");
-    }
-
+    private Vector3f zoomTarget = null;
     private void setupPauseKey(){
         inputManager.addMapping("Pause", new KeyTrigger(KeyInput.KEY_SPACE));
         inputManager.addMapping("Increase Timescale", new KeyTrigger(KeyInput.KEY_RIGHT));
@@ -451,13 +292,51 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
             public void onAnalog(String name, float value, float tpf) {
                 if (name.equals("ZoomIn")) {
                     cameraHeight -= 100f;
+                    zoomOn = true;
+
+                    if (zoomTarget == null) {
+                        Vector2f cursor2d = inputManager.getCursorPosition();
+                        Vector3f nearPoint = cam.getWorldCoordinates(cursor2d, 0f);
+                        Vector3f farPoint  = cam.getWorldCoordinates(cursor2d, 1f);
+                        Vector3f rayDir = farPoint.subtract(nearPoint).normalizeLocal();
+
+                        Ray ray = new Ray(nearPoint, rayDir);
+                        CollisionResults results = new CollisionResults();
+                        rootNode.collideWith(ray, results);
+
+                        if (results.size() > 0) {
+                            // hit an actual body — zoom toward that point
+                            zoomTarget = results.getClosestCollision().getContactPoint();
+                        } else {
+                            // nothing under cursor — fall back to a point along the ray
+                            // at the same distance as your current view target
+                            float fallbackDistance = cam.getLocation().distance(starPosition);
+                            zoomTarget = nearPoint.add(rayDir.mult(fallbackDistance));
+                        }
+                    }
+
+                    Vector3f camPos = cam.getLocation();
+                    Vector3f toTarget = zoomTarget.subtract(camPos);
+                    float distance = toTarget.length();
+                    System.out.println("zoomTarget " + zoomTarget);
+                    System.out.println("distance " + distance);
+                    float minZoomDistance = 5f;
+                    if (distance > minZoomDistance) {
+                        Vector3f step = toTarget.normalize().mult(100f);
+                        cam.setLocation(camPos.add(step));
+                    }
                 }
 
                 if (name.equals("ZoomOut")) {
                     cameraHeight += 100f;
+                    zoomOn = false;
+                    zoomTarget = null;
                 }
 
                 cameraHeight = Math.max(100f, Math.min(cameraHeight, 10000f));
+
+
+
             }
         }, "ZoomIn", "ZoomOut");
         inputManager.addListener(new ActionListener() {
@@ -494,7 +373,10 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
             @Override
             public void onAction(String name, boolean isPressed, float tpf) {
                 if (name.equals("deselect") && isPressed) {
-                    removePlanetPreview();
+                    planetPreviewNode.detachAllChildren();
+                    planetPreviewNode.updateGeometricState();
+                    previewViewPort.setEnabled(false);
+                    debugText.setText("");
                 }
             }
         }, "deselect");

@@ -8,7 +8,12 @@ import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
 import com.jme3.scene.VertexBuffer;
 import com.jme3.scene.shape.Sphere;
+import com.jme3.texture.Image;
+import com.jme3.texture.Texture2D;
+import com.jme3.texture.plugins.AWTLoader;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -22,28 +27,42 @@ public class Body {
     Material material;
     Geometry g;
     List<Body> moons;
-//    final float g_constant = 0.000000000066740f;
     float g_constant;
     private Geometry orbitLine;
     private Mesh orbitMesh;
     private List<Vector3f> orbitPoints = new ArrayList<>();
     boolean isStar = false;
-
+    float original_position;
     Vector3f currentVelocity;
+    PlanetTextureGenerator generator;
+    PlanetType[] types = PlanetType.values();
+    PlanetType randomType;
 
-    public Body(String name, float mass, float radius, Vector3f initialPosition, AssetManager assetManager, float g_constant, ColorRGBA color){
+    public Body(String name, float mass, float radius, Vector3f initialPosition, AssetManager assetManager, float g_constant, boolean isStar){
         this.name = name;
         this.mass = mass;
         this.radius = radius;
         this.assetManager = assetManager;
         this.g_constant = g_constant;
-        this.color = color;
+        this.isStar = isStar;
+
         // initialize moon list
         moons = new ArrayList<>();
 
-        // set color
-        material = new Material(this.assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        material.setColor("Color", color);
+        // initialize generator
+        generator = new PlanetTextureGenerator(assetManager);
+
+        long seed = (long) (Math.random() * Long.MAX_VALUE);
+
+        if ("org.example.Sun".equals(this.getClass().getName())){
+            randomType = PlanetType.STAR;
+        } else if ("org.example.Moon".equals(this.getClass().getName())){
+            randomType = PlanetType.MOON;
+        }else {
+            randomType = types[(int) (Math.random() * (types.length - 2))];
+        }
+
+        material = generator.generatePlanetMaterial(randomType, seed);
 
         // initialize geometry object
         Sphere s = new Sphere(25, 25, radius);
@@ -53,6 +72,7 @@ public class Body {
         g.setMaterial(material);
 
         g.setLocalTranslation(initialPosition);
+        original_position = initialPosition.x;
     }
 
     public void addMoon(Body moon){
@@ -82,8 +102,6 @@ public class Body {
                         direction.mult(acceleration * tpf)
                 );
 
-
-
             }
         }
 
@@ -98,6 +116,11 @@ public class Body {
                 position.z + (currentVelocity.z * tpf)
         );
         g.setLocalTranslation(position);
+
+        if (original_position == position.x){
+            System.out.println("one orbit");
+        }
+
         updateOrbitLine(g.getLocalTranslation());
     }
 
@@ -115,6 +138,10 @@ public class Body {
 
     public void updateOrbitLine(Vector3f currentPosition) {
         orbitPoints.add(currentPosition.clone());
+
+        if (orbitPoints.size() > 3000){
+            orbitPoints.remove(0);
+        }
 
         float[] positions = new float[orbitPoints.size() * 3];
         for (int i = 0; i < orbitPoints.size(); i++) {
@@ -137,6 +164,7 @@ public class Body {
 
         sb.append("---------------------------------").append("\n");
         sb.append("Name: ").append(name).append("\n");
+        sb.append("Planet Type: ").append(randomType).append("\n");
         sb.append("Mass: ").append(mass).append("\n");
         sb.append("Radius: ").append(radius).append("\n");
         sb.append("Color: ").append(color).append("\n");
