@@ -1,4 +1,4 @@
-package org.example;
+package org.example.nbodyproblem;
 
 import com.jme3.asset.AssetManager;
 import com.jme3.math.Vector3f;
@@ -8,7 +8,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class Scenario {
     AssetManager assetManager;
@@ -61,11 +60,11 @@ public class Scenario {
         
         Sun star = new Sun("star", 1000, 6f, new Vector3f(0, 0, 0), assetManager, g, true);
 
-        Body planet_1 = new Body("planet_1", 10f, 3f, new Vector3f(80, 0, 0), assetManager, g, false);
-        Moon moon_1 = new Moon("moon_1", .0002f, 2f, new Vector3f(86, 0, 0), assetManager, g, false);
-        Moon moon_2 = new Moon("moon_2", .0001f, 1f, new Vector3f(74, 0, 0), assetManager, g, false);
+        Body planet_1 = new Body("planet_1", 10f, 3f, new Vector3f(120, 0, 0), assetManager, g, false);
+        Moon moon_1 = new Moon("moon_1", .00002f, 2f, new Vector3f(126, 0, 0), assetManager, g, false);
+        Moon moon_2 = new Moon("moon_2", .00001f, 1f, new Vector3f(114, 0, 0), assetManager, g, false);
 
-        Body planet_4 = new Body("planet_4", 18f, 3f, new Vector3f(-60, 0, 0), assetManager, g, false);
+        Body planet_4 = new Body("planet_4", 18f, 3f, new Vector3f(-100, 0, 0), assetManager, g, false);
 
         planet_1.addMoon(moon_1);
         planet_1.addMoon(moon_2);
@@ -84,12 +83,12 @@ public class Scenario {
     private List<Body> scenario2(){
         Sun star = new Sun("star", 1000, 6f, new Vector3f(0, 0, 0), assetManager, g, true);
 
-        Body planet_1 = new Body("planet_1", 10f, 3f, new Vector3f(80, 0, 0), assetManager, g, false);
-        Moon moon_1 = new Moon("moon_1", .0002f, 2f, new Vector3f(84, 0, 0), assetManager, g, false);
-        Moon moon_2 = new Moon("moon_2", .0001f, 1f, new Vector3f(76, 0, 0), assetManager, g, false);
+        Body planet_1 = new Body("planet_1", 10f, 3f, new Vector3f(220, 0, 0), assetManager, g, false);
+        Moon moon_1 = new Moon("moon_1", .00002f, 2f, new Vector3f(224, 0, 0), assetManager, g, false);
+        Moon moon_2 = new Moon("moon_2", .00001f, 1f, new Vector3f(216, 0, 0), assetManager, g, false);
 
-        Body planet_4 = new Body("planet_4", 12f, 3f, new Vector3f(-80, 0, 0), assetManager, g, false);
-        Moon moon_3 = new Moon("moon_3", .0001f, 1f, new Vector3f(-82, 0, 0), assetManager, g, false);
+        Body planet_4 = new Body("planet_4", 12f, 3f, new Vector3f(-200, 0, 0), assetManager, g, false);
+        Moon moon_3 = new Moon("moon_3", .00001f, 1f, new Vector3f(-206, 0, 0), assetManager, g, false);
 
         planet_1.addMoon(moon_1);
         planet_1.addMoon(moon_2);

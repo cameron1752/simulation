@@ -1,4 +1,4 @@
-package org.example;
+package org.example.nbodyproblem;
 
 import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
@@ -8,15 +8,9 @@ import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
 import com.jme3.scene.VertexBuffer;
 import com.jme3.scene.shape.Sphere;
-import com.jme3.texture.Image;
-import com.jme3.texture.Texture2D;
-import com.jme3.texture.plugins.AWTLoader;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 public class Body {
     String name;
@@ -54,9 +48,9 @@ public class Body {
 
         long seed = (long) (Math.random() * Long.MAX_VALUE);
 
-        if ("org.example.Sun".equals(this.getClass().getName())){
+        if ("org.example.nbodyproblem.Sun".equals(this.getClass().getName())){
             randomType = PlanetType.STAR;
-        } else if ("org.example.Moon".equals(this.getClass().getName())){
+        } else if ("org.example.nbodyproblem.Moon".equals(this.getClass().getName())){
             randomType = PlanetType.MOON;
         }else {
             randomType = types[(int) (Math.random() * (types.length - 2))];

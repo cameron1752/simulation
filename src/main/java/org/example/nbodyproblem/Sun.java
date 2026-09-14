@@ -1,4 +1,4 @@
-package org.example;
+package org.example.nbodyproblem;
 
 import com.jme3.asset.AssetManager;
 import com.jme3.math.Vector3f;

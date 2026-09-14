@@ -1,4 +1,4 @@
-package org.example;
+package org.example.nbodyproblem;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.collision.CollisionResults;
@@ -99,8 +99,8 @@ public class SolarSystemSimulationTwo extends SimpleApplication {
 
     public void initPlanets() throws InvocationTargetException, IllegalAccessException {
 
-        bodies = scenario.getRandomScenario();
-//        bodies = scenario.getScenario(8);
+//        bodies = scenario.getRandomScenario();
+        bodies = scenario.getScenario(5);
 
         star = scenario.star;
 

@@ -1,4 +1,4 @@
-package org.example;
+package org.example.solarsystem;
 
 import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
@@ -9,11 +9,8 @@ import com.jme3.scene.Mesh;
 import com.jme3.scene.VertexBuffer;
 import com.jme3.scene.shape.Sphere;
 
-import javax.swing.plaf.synth.SynthOptionPaneUI;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.lang.Float.NaN;
 
 public class Planet {
     float gravity;
