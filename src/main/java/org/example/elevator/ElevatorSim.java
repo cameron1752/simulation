@@ -27,7 +27,8 @@ public class ElevatorSim extends SimpleApplication {
         ElevatorSim app = new ElevatorSim();
 
         settings.setTitle("My Awesome Game");
-        settings.setResolution(1920, 1080);
+//        settings.setResolution(1920, 1080);
+        settings.setResolution(1200, 800);
 //        settings.setFullscreen(true);
         app.setSettings(settings);
 
@@ -46,7 +47,7 @@ public class ElevatorSim extends SimpleApplication {
 
         for (int x = 0; x < elevators; x++){
             initShaft(x * offset);
-            Elevator elevator = new Elevator(assetManager, wallLength, wallHeight, floors, x * offset);
+            Elevator elevator = new Elevator(assetManager, wallLength, wallHeight, floors, x * offset, x);
             elevatorManager.addElevator(elevator);
             rootNode.attachChild(elevator.getElevator());
         }

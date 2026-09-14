@@ -15,7 +15,9 @@ public class People {
         targetFloor = ThreadLocalRandom.current().nextInt(0, floors + 1);
 
         if (targetFloor == currentFloor){
-            targetFloor = ThreadLocalRandom.current().nextInt(0, floors + 1);
+            while (targetFloor == currentFloor){
+                targetFloor = ThreadLocalRandom.current().nextInt(0, floors + 1);
+            }
         }
         start = System.currentTimeMillis();
     }
@@ -34,7 +36,13 @@ public class People {
     public int getTargetFloor(){return targetFloor;}
     public void setElevator(Elevator elevator){
         this.elevator = elevator;
-        setOnElevator(true);
+    }
+    public Elevator getElevator(){
+        if (this.elevator == null){
+            return null;
+        } else {
+            return this.elevator;
+        }
     }
     public long getStart(){return start;}
     public boolean isArrived(){
@@ -49,7 +57,7 @@ public class People {
         }
     }
 
-    public boolean isOnElevator(){return onElevator;}
+    public boolean isOnElevator(){return elevator.getCurrentFloor() == currentFloor;}
 
     @Override
     public String toString() {

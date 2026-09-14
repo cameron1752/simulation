@@ -11,23 +11,26 @@ import java.util.*;
 
 public class Elevator {
     private final Geometry elevator;
-    private final boolean debug = false;
+    private boolean debug = false;
     private final int floors;
     private final float wallHeight;
     private final List<Float> floorHeights = new ArrayList<>();
     private float counter;
-    private String state = "START";
+    private String state = "IDLE";
     private int idleFloor = 0;
+    private List<Integer> journey = new ArrayList<>();
+    private String name;
 
     private int currentFloor = 0;
     private final Queue<Integer> targetFloor;
 
-    public Elevator(AssetManager assetManager, float wallLength, float wallHeight, int floors, int offSet){
+    public Elevator(AssetManager assetManager, float wallLength, float wallHeight, int floors, int offSet, int name){
         Material materialElevator = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        materialElevator.setColor("Color", ColorRGBA.Yellow);
+        materialElevator.setColor("Color", ColorRGBA.randomColor());
 
         this.floors = floors;
         this.wallHeight = wallHeight;
+        this.name = "Elevator " + name;
 
         Box elevatorBox = new Box(wallLength - .1f,  wallHeight,  wallLength - .1f);
         elevator = new Geometry("Elevator", elevatorBox);
@@ -74,14 +77,19 @@ public class Elevator {
             } else{
                 if (counter > 90){
                     counter = 0;
-                    targetFloor.poll();
+                    journey.add(targetFloor.poll());
                 } else {
                     counter += tpf;
                 }
             }
         } else {
-            state = "IDLE";
-            setTargetFloor(idleFloor);
+            if (!state.equals("IDLE")){
+                state = "IDLE";
+                setTargetFloor(idleFloor);
+                debug = true;
+                debug(name + ": " + journey.toString());
+                debug = false;
+            }
         }
     }
 
@@ -137,5 +145,11 @@ public class Elevator {
         debug(targetFloor.toString());
     }
     public String getState(){return state;}
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
 
+    public void setStatus(String targetDirection) {
+        this.state = targetDirection;
+    }
 }

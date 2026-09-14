@@ -33,11 +33,12 @@ public class ElevatorManager {
         }
 
         // need to find the closest elevator that is also going the targetDirection
-
         for (int x = 0; x < elevatorList.size(); x++){
             Elevator e = elevatorList.get(x);
             // if they're going the same direction
-            if (e.getState().equals(targetDirection)){
+            if (e.getState().equals(targetDirection)
+                    || e.getState().equals("IDLE")
+                    || e.getState().equals("START")){
                 if (Math.abs(elevatorList.get(x).getCurrentFloor() - targetFloor) < min
                         && smellTest(elevatorList.get(x), targetFloor)){
 
@@ -48,8 +49,43 @@ public class ElevatorManager {
             }
         }
 
+        // need to reset the queue basically in ascending or descending order based on the direction
+        Elevator elevator = elevatorList.get(closest);
+
+        // for instance where elevator going up, picks someone up and drops them
+        if (elevator.getState().equals(targetDirection)
+                && currentFloor > elevator.getCurrentFloor()){
+            // add current and target to queue in the correct order
+            List<Integer> targets = new ArrayList<>();
+            // newly tracked target
+            targets.add(currentFloor);
+            // newly tracked target
+            targets.add(targetFloor);
+            // currently tracked target
+            int temp = elevator.pollTargetFloor();
+            // empty rest of queue
+            while (temp != 0){
+                targets.add(temp);
+                temp = elevator.pollTargetFloor();
+            }
+            // sort ascending order
+            Collections.sort(targets);
+            // reset queue
+            elevator.clearTarget();
+            // add all targets back
+            for (int x : targets){
+                elevator.setTargetFloor(x);
+            }
+            // add base for return
+            elevator.setTargetFloor(0);
+            elevator.setDebug(true);
+            elevator.printQueue();
+            elevator.setDebug(false);
+        }
+
         elevatorList.get(closest).setTargetFloor(currentFloor);
         elevatorList.get(closest).setTargetFloor(targetFloor);
+        elevatorList.get(closest).setStatus(targetDirection);
         // return the elevator being ridden
         return elevatorList.get(closest);
     }

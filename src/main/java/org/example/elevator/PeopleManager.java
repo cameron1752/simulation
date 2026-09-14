@@ -15,7 +15,7 @@ public class PeopleManager {
     public PeopleManager(ElevatorManager elevatorManager){
         this.elevatorManager = elevatorManager;
 
-        for (int x = 0; x < 5; x++){
+        for (int x = 0; x < 2; x++){
             people.add(new People(elevatorManager.getFloors()));
             pendingPeopleCount++;
         }
@@ -39,29 +39,35 @@ public class PeopleManager {
                 longestWait = Math.max(longestWait, elapsedTime);
                 // update shortest
                 shortestWait = Math.min(shortestWait, elapsedTime);
-                // remove from list
+                // remove
                 people.remove(p);
-            } else if (!p.isOnElevator()) {
-                // if they haven't pressed their button yet press the button
-                Elevator e = elevatorManager.sendClosest(p.getCurrentFloor(), p.getTargetFloor());
-                // assign it to the person
-                p.setElevator(e);
+            } else {
+                // if they've pressed the button skip
+                if (p.getElevator() == null){
+                    // if they haven't pressed their button yet press the button
+                    Elevator e = elevatorManager.sendClosest(p.getCurrentFloor(), p.getTargetFloor());
+                    // assign it to the person
+                    p.setElevator(e);
+                    // if they'e presed the button and the elevator is at their current floor they're n the elevator
+                } else if (p.getElevator().getCurrentFloor() == p.getCurrentFloor()) {
+                    p.setOnElevator(true);
+                }
             }
         }
 
-        if (people.isEmpty()){
-            System.out.println("All people have been delivered!");
-        }
+//        if (people.isEmpty()){
+//            System.out.println("All people have been delivered!");
+//        }
     }
 
     @Override
     public String toString() {
-        return "PeopleManager{" +
-                "completedPeopleCount=" + completedPeopleCount +
-                ", pendingPeopleCount=" + pendingPeopleCount +
-                ", avgWait=" + avgWait +
-                ", longestWait=" + longestWait +
-                ", shortestWait=" + shortestWait +
+        return "PeopleManager{" + "\n" +
+                "completedPeopleCount=" + completedPeopleCount + "\n" +
+                ", pendingPeopleCount=" + pendingPeopleCount + "\n" +
+                ", avgWait=" + avgWait + "\n" +
+                ", longestWait=" + longestWait + "\n" +
+                ", shortestWait=" + shortestWait + "\n" +
                 '}';
     }
 }
