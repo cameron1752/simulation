@@ -7,6 +7,10 @@ import java.util.List;
 public class ElevatorManager {
     private int floors;
     private List<Elevator> elevatorList = new ArrayList<>();
+    private static final String IDLE = "IDLE";
+    private static final String OPEN = "OPEN";
+
+
     public ElevatorManager(int floors){
         this.floors = floors;
     }
@@ -35,7 +39,7 @@ public class ElevatorManager {
         for (Elevator e : elevatorList){
 
             // if an elevator is already going in that direction send that one
-            if (targetDirection.equals(e.getState()) || "IDLE".equals(e.getState())){
+            if (targetDirection.equals(e.getState()) || IDLE.equals(e.getState())){
                 // add to queue
                 e.setTargetFloor(currentFloor);
                 e.setTargetFloor(targetFloor);

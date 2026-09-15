@@ -11,7 +11,7 @@ import java.util.*;
 
 public class Elevator {
     private final Geometry elevator;
-    private boolean debug = false;
+    private boolean debug = true;
     private final int floors;
     private final float wallHeight;
     private final List<Float> floorHeights = new ArrayList<>();
@@ -74,21 +74,22 @@ public class Elevator {
                 position.y = position.y - (.25f * tpf);
                 elevator.setLocalTranslation(position);
                 currentFloor = getFloor(position.y);
-            } else{
+            } else {
                 if (counter > 90){
                     counter = 0;
                     journey.add(targetFloor.poll());
                 } else {
                     counter += tpf;
                 }
+                currentFloor = getFloor(position.y);
             }
         } else {
             if (!state.equals("IDLE")){
                 state = "IDLE";
                 setTargetFloor(idleFloor);
-                debug = true;
-                debug(name + ": " + journey.toString());
-                debug = false;
+                debug(journey.toString());
+            } else {
+                debug("sitting idle");
             }
         }
     }
@@ -118,13 +119,12 @@ public class Elevator {
     }
 
     public void fixQueue(String targetDirection){
+        // fixQueue to put the floors in ascending or descending order based on targetDirection
         List<Integer> floors = new ArrayList<>();
 
-        int tempFloor = targetFloor.poll();
-
         while (targetFloor.peek() != null){
+            int tempFloor = targetFloor.poll();
             floors.add(tempFloor);
-            tempFloor = targetFloor.poll();
         }
 
         if ("UP".equals(targetDirection)) {
@@ -141,7 +141,7 @@ public class Elevator {
 
     public void debug(String message){
         if (debug){
-            System.out.println(message);
+            System.out.println(name + "[" + message + "]");
         }
     }
 
@@ -176,4 +176,6 @@ public class Elevator {
     public void setStatus(String targetDirection) {
         this.state = targetDirection;
     }
+
+    public String getName(){return name;}
 }

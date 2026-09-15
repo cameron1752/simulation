@@ -18,7 +18,7 @@ public class ElevatorSim extends SimpleApplication {
     private final float wallHeight = 10f;
     private final int floors = 10;
     private final int offset = 20;
-    private final int elevators = 2;
+    private final int elevators = 1;
     private ElevatorManager elevatorManager;
     private BitmapText debugText;
     private PeopleManager peopleManager;
@@ -123,7 +123,9 @@ public class ElevatorSim extends SimpleApplication {
     public void simpleUpdate(float tpf) {
         elevatorManager.update(1);
         peopleManager.update();
-        debugText.setText(elevatorManager.getInfo() + peopleManager.toString());
+        debugText.setText(elevatorManager.getInfo()
+                + peopleManager.toString()
+                + peopleManager.getPeople().toString());
     }
 
     private void initDebugText(){

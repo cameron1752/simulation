@@ -72,7 +72,8 @@ public class People {
                 "currentFloor=" + currentFloor +
                 ", targetFloor=" + targetFloor +
                 ", onElevator=" + onElevator +
+                ", isArrived=" + arrived +
                 ", direction=" + direction() +
-                '}';
+                "} \n";
     }
 }
