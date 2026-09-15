@@ -54,6 +54,10 @@ public class ElevatorSim extends SimpleApplication {
 
     }
 
+    private void resetPeople(){
+        peopleManager = new PeopleManager(elevatorManager);
+    }
+
     public void initCamera(){
         cam.setLocation(new Vector3f(offset * ((float) elevators / 2), 10f, -200f));
         cam.lookAt(new Vector3f(offset * ((float) elevators / 2), 0f, 0), Vector3f.UNIT_Y);
@@ -135,127 +139,17 @@ public class ElevatorSim extends SimpleApplication {
     }
 
     private void initCallKeys(){
-        inputManager.addMapping("Call floor 0", new KeyTrigger(KeyInput.KEY_0));
-        inputManager.addMapping("Call floor 1", new KeyTrigger(KeyInput.KEY_1));
-        inputManager.addMapping("Call floor 2", new KeyTrigger(KeyInput.KEY_2));
-        inputManager.addMapping("Call floor 3", new KeyTrigger(KeyInput.KEY_3));
-        inputManager.addMapping("Call floor 4", new KeyTrigger(KeyInput.KEY_4));
-        inputManager.addMapping("Call floor 5", new KeyTrigger(KeyInput.KEY_5));
-        inputManager.addMapping("Call floor 6", new KeyTrigger(KeyInput.KEY_6));
-        inputManager.addMapping("Call floor 7", new KeyTrigger(KeyInput.KEY_7));
-        inputManager.addMapping("Call floor 8", new KeyTrigger(KeyInput.KEY_8));
-        inputManager.addMapping("Call floor 9", new KeyTrigger(KeyInput.KEY_9));
+        inputManager.addMapping("Reset", new KeyTrigger(KeyInput.KEY_R));
 
 
         inputManager.addListener(new ActionListener() {
             @Override
             public void onAction(String name, boolean isPressed, float tpf) {
-                if (name.equals("Call floor 0") && isPressed) {
-                    System.out.println(name);
-                    elevatorManager.sendClosest(9);
-                    //elevatorManager.sendClosest(0);
+                if (name.equals("Reset") && isPressed) {
+                    resetPeople();
                 }
             }
-        }, "Call floor 0");
-
-        inputManager.addListener(new ActionListener() {
-            @Override
-            public void onAction(String name, boolean isPressed, float tpf) {
-                if (name.equals("Call floor 1") && isPressed) {
-                    System.out.println(name);
-                    elevatorManager.sendClosest(0);
-                    //elevatorManager.sendClosest(0);
-                }
-            }
-        }, "Call floor 1");
-
-        inputManager.addListener(new ActionListener() {
-            @Override
-            public void onAction(String name, boolean isPressed, float tpf) {
-                if (name.equals("Call floor 2") && isPressed) {
-                    System.out.println(name);
-                    elevatorManager.sendClosest(1);
-                    //elevatorManager.sendClosest(0);
-                }
-            }
-        }, "Call floor 2");
-
-        inputManager.addListener(new ActionListener() {
-            @Override
-            public void onAction(String name, boolean isPressed, float tpf) {
-                if (name.equals("Call floor 3") && isPressed) {
-                    System.out.println(name);
-                    elevatorManager.sendClosest(2);
-                    //elevatorManager.sendClosest(0);
-                }
-            }
-        }, "Call floor 3");
-
-        inputManager.addListener(new ActionListener() {
-            @Override
-            public void onAction(String name, boolean isPressed, float tpf) {
-                if (name.equals("Call floor 4") && isPressed) {
-                    System.out.println(name);
-                    elevatorManager.sendClosest(3);
-                    //elevatorManager.sendClosest(0);
-                }
-            }
-        }, "Call floor 4");
-
-        inputManager.addListener(new ActionListener() {
-            @Override
-            public void onAction(String name, boolean isPressed, float tpf) {
-                if (name.equals("Call floor 5") && isPressed) {
-                    System.out.println(name);
-                    elevatorManager.sendClosest(4);
-                    //elevatorManager.sendClosest(0);
-                }
-            }
-        }, "Call floor 5");
-
-        inputManager.addListener(new ActionListener() {
-            @Override
-            public void onAction(String name, boolean isPressed, float tpf) {
-                if (name.equals("Call floor 6") && isPressed) {
-                    System.out.println(name);
-                    elevatorManager.sendClosest(5);
-                    //elevatorManager.sendClosest(0);
-                }
-            }
-        }, "Call floor 6");
-
-        inputManager.addListener(new ActionListener() {
-            @Override
-            public void onAction(String name, boolean isPressed, float tpf) {
-                if (name.equals("Call floor 7") && isPressed) {
-                    System.out.println(name);
-                    elevatorManager.sendClosest(6);
-                    //elevatorManager.sendClosest(0);
-                }
-            }
-        }, "Call floor 7");
-
-        inputManager.addListener(new ActionListener() {
-            @Override
-            public void onAction(String name, boolean isPressed, float tpf) {
-                if (name.equals("Call floor 8") && isPressed) {
-                    System.out.println(name);
-                    elevatorManager.sendClosest(7);
-                    //elevatorManager.sendClosest(0);
-                }
-            }
-        }, "Call floor 8");
-
-        inputManager.addListener(new ActionListener() {
-            @Override
-            public void onAction(String name, boolean isPressed, float tpf) {
-                if (name.equals("Call floor 9") && isPressed) {
-                    System.out.println(name);
-                    elevatorManager.sendClosest(8);
-                    //elevatorManager.sendClosest(0);
-                }
-            }
-        }, "Call floor 9");
+        }, "Reset");
 
     }
 }

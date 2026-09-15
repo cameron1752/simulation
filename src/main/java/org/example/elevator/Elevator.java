@@ -117,6 +117,28 @@ public class Elevator {
         }
     }
 
+    public void fixQueue(String targetDirection){
+        List<Integer> floors = new ArrayList<>();
+
+        int tempFloor = targetFloor.poll();
+
+        while (targetFloor.peek() != null){
+            floors.add(tempFloor);
+            tempFloor = targetFloor.poll();
+        }
+
+        if ("UP".equals(targetDirection)) {
+            Collections.sort(floors);
+        } else {
+            floors.sort(Collections.reverseOrder());
+        }
+
+        targetFloor.addAll(floors);
+
+        printQueue();
+
+    }
+
     public void debug(String message){
         if (debug){
             System.out.println(message);
@@ -142,7 +164,9 @@ public class Elevator {
     }
 
     public void printQueue(){
+        debug = true;
         debug(targetFloor.toString());
+        debug = false;
     }
     public String getState(){return state;}
     public void setDebug(boolean debug) {

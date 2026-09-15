@@ -11,11 +11,12 @@ public class PeopleManager {
     private long shortestWait;
     private final List<People> people = new ArrayList<>();
     private ElevatorManager elevatorManager;
+    private boolean debug = true;
 
     public PeopleManager(ElevatorManager elevatorManager){
         this.elevatorManager = elevatorManager;
 
-        for (int x = 0; x < 2; x++){
+        for (int x = 0; x < 3; x++){
             people.add(new People(elevatorManager.getFloors()));
             pendingPeopleCount++;
         }
@@ -26,38 +27,38 @@ public class PeopleManager {
     public void update(){
         for (int x = 0; x < people.size(); x++){
             People p = people.get(x);
+
+            // check and see if the person has arrived
             if (p.isArrived()){
-                // increment count
+                // if they're on the elevator
+                // check and see if they've arrived
+                // if they've arrived, set our stats w/e and remove from list
                 completedPeopleCount++;
-                // decrement pending
                 pendingPeopleCount--;
-                // calculate wait time
-                long elapsedTime = System.currentTimeMillis() - p.getStart();
-                // update the average
-                avgWait = ((avgWait * (completedPeopleCount - 1)) + elapsedTime)/ completedPeopleCount;
-                // update longest
-                longestWait = Math.max(longestWait, elapsedTime);
-                // update shortest
-                shortestWait = Math.min(shortestWait, elapsedTime);
-                // remove
+                longestWait = Math.max(longestWait, System.currentTimeMillis() - p.getStart());
+                shortestWait = Math.min(shortestWait, System.currentTimeMillis() - p.getStart());
                 people.remove(p);
             } else {
-                // if they've pressed the button skip
+                // if they aren't on the elevator, call the elevator unless we already called it
                 if (p.getElevator() == null){
-                    // if they haven't pressed their button yet press the button
-                    Elevator e = elevatorManager.sendClosest(p.getCurrentFloor(), p.getTargetFloor());
-                    // assign it to the person
-                    p.setElevator(e);
-                    // if they'e presed the button and the elevator is at their current floor they're n the elevator
-                } else if (p.getElevator().getCurrentFloor() == p.getCurrentFloor()) {
-                    p.setOnElevator(true);
+                    debug("Calling elevator from: " + p.getCurrentFloor());
+                    p.setElevator(elevatorManager.sendClosest(p.getCurrentFloor(), p.getTargetFloor()));
+                } else {
+                    // if we called the elevator need to wait until it gets to our floor to get on
+                    if (p.getElevator().getCurrentFloor() == p.getCurrentFloor() && !p.isOnElevator()){
+                        debug("Getting on the elevator at: " + p.getCurrentFloor());
+                        p.setOnElevator(true);
+                    }
+                    // if we're on the elevator and have reached the destination need to set arrived
+                    if (p.getElevator().getCurrentFloor() == p.getTargetFloor() && p.isOnElevator()){
+                        debug("Getting off the elevator at: " + p.getTargetFloor());
+                        p.setArrived(true);
+                        p.setOnElevator(false);
+                    }
                 }
             }
         }
 
-//        if (people.isEmpty()){
-//            System.out.println("All people have been delivered!");
-//        }
     }
 
     @Override
@@ -69,5 +70,11 @@ public class PeopleManager {
                 ", longestWait=" + longestWait + "\n" +
                 ", shortestWait=" + shortestWait + "\n" +
                 '}';
+    }
+
+    private void debug(String message){
+        if (debug){
+            System.out.println(message);
+        }
     }
 }

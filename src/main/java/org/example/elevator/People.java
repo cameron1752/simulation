@@ -9,6 +9,7 @@ public class People {
     private final long start;
     private Elevator elevator;
     private boolean onElevator = false;
+    private boolean arrived = false;
 
     public People(int floors){
         currentFloor = ThreadLocalRandom.current().nextInt(0, floors + 1);
@@ -46,7 +47,11 @@ public class People {
     }
     public long getStart(){return start;}
     public boolean isArrived(){
-        return getCurrentFloor() == targetFloor;
+        return arrived;
+    }
+
+    public void setArrived(boolean arrived){
+        this.arrived = arrived;
     }
 
     private String direction(){
@@ -57,7 +62,9 @@ public class People {
         }
     }
 
-    public boolean isOnElevator(){return elevator.getCurrentFloor() == currentFloor;}
+    public boolean isOnElevator(){
+        return onElevator;
+    }
 
     @Override
     public String toString() {
