@@ -5,53 +5,57 @@ import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.Node;
 import com.jme3.scene.shape.Box;
 
 import java.util.*;
 
-public class Elevator {
+public class Elevator extends HelperClass{
     private final Geometry elevator;
-    private boolean debug = true;
     private final int floors;
     private final float wallHeight;
     private final List<Float> floorHeights = new ArrayList<>();
     private float counter;
-    private String state = "IDLE";
+    private State state = State.IDLE;
     private int idleFloor = 0;
     private List<Integer> journey = new ArrayList<>();
-    private String name;
-
+    private int occupants;
+    private int totalOccupants;
     private int currentFloor = 0;
-    private final Queue<Integer> targetFloor;
+    private final Queue<Integer> targetFloor = new LinkedList<Integer>();
+    private static final float SPEED = .25f;
 
     public Elevator(AssetManager assetManager, float wallLength, float wallHeight, int floors, int offSet, int name){
+        super("Elevator " + name);
+        this.floors = floors;
+        this.wallHeight = wallHeight;
+
+        this.floorHeights.addAll(calculateFloors());
+        this.elevator = initGeometry(assetManager, wallLength, wallHeight, offSet, floorHeights.get(idleFloor));
+    }
+
+    private static Geometry initGeometry(AssetManager assetManager, float wallLength, float wallHeight, float offSet, float floorHeight){
         Material materialElevator = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         materialElevator.setColor("Color", ColorRGBA.randomColor());
 
-        this.floors = floors;
-        this.wallHeight = wallHeight;
-        this.name = "Elevator " + name;
-
         Box elevatorBox = new Box(wallLength - .1f,  wallHeight,  wallLength - .1f);
-        elevator = new Geometry("Elevator", elevatorBox);
-        elevator.setLocalTranslation(offSet, (-wallHeight * floors) + (wallHeight), 0);
+        Geometry elevator = new Geometry("Elevator", elevatorBox);
+        elevator.setLocalTranslation(offSet, floorHeight, 0);
         elevator.setMaterial(materialElevator);
 
-        calculateFloors();
-
-        targetFloor = new LinkedList<Integer>();
+        return elevator;
     }
 
-    private void calculateFloors(){
-        for (int x = 1; x <= (floors); x = x + 2){
-
-            floorHeights.add(-(wallHeight * x) - (wallHeight));
-            floorHeights.add((wallHeight * x) + (wallHeight));
+    private List<Float> calculateFloors(){
+        List<Float> heights = new ArrayList<>();
+        for (int x = 0; x <= (floors); x++){
+            heights.add(-(wallHeight * floors) + (2f * wallHeight * x));
         }
-        floorHeights.add(0f);
-        Collections.sort(floorHeights);
 
-        debug(floorHeights.toString());
+        Collections.sort(heights);
+
+        debug(heights.toString());
+        return heights;
     }
 
     public void setIdleFloor(int floor){
@@ -63,40 +67,61 @@ public class Elevator {
     public void update(float tpf){
         Vector3f position = elevator.getLocalTranslation();
 
-        if (targetFloor.peek() != null){
-            if (position.y < (floorHeights.get(targetFloor.peek()) + (wallHeight))){
-                state = "UP";
-                position.y = position.y + (.25f * tpf);
-                elevator.setLocalTranslation(position);
+        // if targetFloor is empty
+        if (targetFloor.isEmpty()){
+            if ((currentFloor) < (idleFloor)){
+                // we're below idleFloor
+                position.y += SPEED * tpf;
                 currentFloor = getFloor(position.y);
-            } else if (position.y > (floorHeights.get(targetFloor.peek()) + (wallHeight))) {
-                state = "DOWN";
-                position.y = position.y - (.25f * tpf);
-                elevator.setLocalTranslation(position);
+                state = State.UP;
+            } else if ((currentFloor) > (idleFloor)){
+                // we're above the idle floor go down
+                position.y -= SPEED * tpf;
                 currentFloor = getFloor(position.y);
-            } else {
-                if (counter > 90){
+                state = State.DOWN;
+            } else if ((currentFloor) == (idleFloor)){
+                // we're at the idle floor
+                position.y = floorHeights.get(currentFloor);
+                currentFloor = getFloor(position.y);
+                state = State.IDLE;
+                debug(journey.toString());
+            }
+
+        } else {
+            // otherwise we have somewhere to go
+            if ((currentFloor) < (targetFloor.peek())){
+                // we're below need to move up
+                position.y += SPEED * tpf;
+                currentFloor = getFloor(position.y);
+                state = State.UP;
+            }
+
+            if ((currentFloor) > (targetFloor.peek())){
+                // we're above need to move down
+                position.y -= SPEED * tpf;
+                currentFloor = getFloor(position.y);
+                state = State.DOWN;
+            }
+
+            if ((currentFloor) == (targetFloor.peek())){
+                // we're at the floor, take a beat & poll
+                if (counter > 90f){
                     counter = 0;
                     journey.add(targetFloor.poll());
                 } else {
+                    state = State.OPEN;
                     counter += tpf;
                 }
-                currentFloor = getFloor(position.y);
-            }
-        } else {
-            if (!state.equals("IDLE")){
-                state = "IDLE";
-                setTargetFloor(idleFloor);
-                debug(journey.toString());
-            } else {
-                debug("sitting idle");
             }
         }
+
+        // move the elevator
+        elevator.setLocalTranslation(position);
     }
 
     private int getFloor(float y) {
 
-        for (int x = 0; x < floors; x++){
+        for (int x = 0; x <= floors; x++){
             if (y == floorHeights.get(x)){
                 return x;
             }
@@ -118,36 +143,36 @@ public class Elevator {
         }
     }
 
-    public void fixQueue(String targetDirection){
+    public void fixQueue(State targetDirection){
         // fixQueue to put the floors in ascending or descending order based on targetDirection
-        List<Integer> floors = new ArrayList<>();
+        // need to remove duplicates
+        List<Integer> orderedFloors = new ArrayList<>();
 
         while (targetFloor.peek() != null){
             int tempFloor = targetFloor.poll();
-            floors.add(tempFloor);
+            orderedFloors.add(tempFloor);
         }
 
-        if ("UP".equals(targetDirection)) {
-            Collections.sort(floors);
+        if (State.UP == targetDirection) {
+            Collections.sort(orderedFloors);
         } else {
-            floors.sort(Collections.reverseOrder());
+            orderedFloors.sort(Collections.reverseOrder());
         }
 
-        targetFloor.addAll(floors);
+        // remove in order duplicates here
+        // i.e. 1, 1, 2, 2 -> 1, 2
+        // i.e. 1, 1, 2, 2, 1, 1 -> 1, 2, 1
 
-        printQueue();
+        targetFloor.addAll(orderedFloors);
+
+        debug(targetFloor.toString());
 
     }
 
-    public void debug(String message){
-        if (debug){
-            System.out.println(name + "[" + message + "]");
-        }
+    public void attachTo(Node parent){
+        parent.attachChild(this.elevator);
     }
-
-    public Geometry getElevator(){return elevator;}
     public int getCurrentFloor(){return currentFloor;}
-    public void clearTarget(){targetFloor.clear();}
     public int getTargetFloor(){
         if (targetFloor.peek() != null){
             return targetFloor.peek();
@@ -155,27 +180,34 @@ public class Elevator {
             return (floors / 2);
         }
     }
-    public int pollTargetFloor(){
-        if (targetFloor.peek() != null){
-            return targetFloor.poll();
-        } else {
-            return 0;
-        }
-    }
-
-    public void printQueue(){
-        debug = true;
-        debug(targetFloor.toString());
-        debug = false;
-    }
-    public String getState(){return state;}
-    public void setDebug(boolean debug) {
-        this.debug = debug;
-    }
-
-    public void setStatus(String targetDirection) {
+    public Queue<Integer> getQueue(){return targetFloor;}
+    public List<Integer> getJourney(){return journey;}
+    public State getState(){return state;}
+    public void setStatus(State targetDirection) {
         this.state = targetDirection;
     }
-
     public String getName(){return name;}
+    public void addOccupants(){
+        occupants++;
+    }
+    public int getOccupants(){
+        return occupants;
+    }
+    public void removeOccupants(){
+        occupants--;
+    }
+    public void addTotalOccupants(){totalOccupants++;}
+    public int getTotalOccupants(){return totalOccupants;}
+    public String toString(){
+
+        return name + "\n" +
+                "Occupants: " + getOccupants() + "\n" +
+                "Total Occupants: " + getTotalOccupants() + "\n" +
+                "Current Floor: " + getCurrentFloor() + "\n" +
+                "Target Floor: " + getTargetFloor() + "\n" +
+                "State: " + getState() + "\n" +
+                "Current Queue: " + getQueue() + "\n" +
+                "Journey: " + getJourney() + "\n" +
+                "-------------------------" + "\n";
+    }
 }

@@ -1,17 +1,16 @@
 package org.example.elevator;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-public class ElevatorManager {
-    private int floors;
-    private List<Elevator> elevatorList = new ArrayList<>();
-    private static final String IDLE = "IDLE";
-    private static final String OPEN = "OPEN";
+public class ElevatorManager extends HelperClass{
+    private final int floors;
+    private final List<Elevator> elevatorList = new ArrayList<>();
+    private static final boolean featureFlag = false;
 
 
     public ElevatorManager(int floors){
+        super("ElevatorManager");
         this.floors = floors;
     }
 
@@ -19,127 +18,120 @@ public class ElevatorManager {
         elevatorList.add(elevator);
 
         if (elevatorList.size() % 2 == 0){
-            elevator.setIdleFloor(0);
+            elevator.setIdleFloor(floors / 2);
         } else {
             elevator.setIdleFloor(0);
         }
     }
 
     public Elevator sendClosest(int currentFloor, int targetFloor){
-        String targetDirection;
-        int closest = 0;
-        int min = floors;
-
-        if (currentFloor > targetFloor){
-            targetDirection = "DOWN";
+        if (featureFlag){
+            return sendClosestNew(currentFloor, targetFloor);
         } else {
-            targetDirection = "UP";
+            return sendClosestOld(currentFloor, targetFloor);
+        }
+    }
+
+    public Elevator sendClosestOld(int currentFloor, int targetFloor){
+        State direction = (currentFloor > targetFloor) ? State.DOWN : State.UP;
+
+        Elevator best = null;
+        int bestCost = Integer.MAX_VALUE;
+
+        Elevator fallbackBest = null;
+        int fallbackCost = Integer.MAX_VALUE;
+
+        for (Elevator e : elevatorList) {
+            boolean eligibleNow =
+                    e.getState() == State.IDLE
+                            || (e.getState() == direction && isAheadOf(e, currentFloor, direction));
+
+            int cost = Math.abs(e.getCurrentFloor() - currentFloor);
+            // small tie-break: penalize elevators with longer existing queues
+            cost += e.getQueue().size();
+
+            if (eligibleNow) {
+                if (cost < bestCost) {
+                    bestCost = cost;
+                    best = e;
+                }
+            } else if (cost < fallbackCost) {
+                fallbackCost = cost;
+                fallbackBest = e;
+            }
         }
 
-        for (Elevator e : elevatorList){
+        Elevator chosen = (best != null) ? best : fallbackBest;
+        if (chosen == null) {
+            return null; // no elevators registered at all
+        }
 
-            // if an elevator is already going in that direction send that one
-            if (targetDirection.equals(e.getState()) || IDLE.equals(e.getState())){
-                // add to queue
+        chosen.setTargetFloor(currentFloor);
+        chosen.setTargetFloor(targetFloor);
+        chosen.setStatus(direction);
+
+        if (chosen.getState() == direction && !chosen.getQueue().isEmpty()) {
+            chosen.fixQueue(direction);
+        }
+
+        return chosen;
+    }
+
+    private boolean isAheadOf(Elevator e, int requestFloor, State direction) {
+        return direction == State.UP
+                ? e.getCurrentFloor() <= requestFloor
+                : e.getCurrentFloor() >= requestFloor;
+    }
+
+    public Elevator sendClosestNew(int currentFloor, int targetFloor){
+        State targetDirection;
+
+        if (currentFloor > targetFloor){
+            targetDirection = State.DOWN;
+        } else {
+            targetDirection = State.UP;
+        }
+
+        // if there's an idle elevator just send that one
+        for (Elevator e : elevatorList){
+            if (State.IDLE == e.getState()){
                 e.setTargetFloor(currentFloor);
                 e.setTargetFloor(targetFloor);
                 e.setStatus(targetDirection);
-                // fix the queue
-                e.fixQueue(targetDirection);
-                // return the elevator being ridden
                 return e;
             }
 
+            // if the elevator is going up already
+            // e.current < current && e.status == UP
+            if (State.UP == targetDirection
+                    && e.getCurrentFloor() < currentFloor
+                    && e.getState() == State.UP){
+                e.setTargetFloor(currentFloor);
+                e.setTargetFloor(targetFloor);
+                e.setStatus(targetDirection);
+                // need to fix the queue so that we pick up and drop off in ascending order
+                // i.e. current floor (1) target floor (4, 6) new request (3, 5)
+                // queue should look like (3, 4, 5, 6)
+                e.fixQueue(targetDirection);
+                return e;
+            }
+
+            // if the elevator is going down already
+            // e.current > current && e.status == DOWN
+            if (State.DOWN == targetDirection
+                    && e.getCurrentFloor() > currentFloor
+                    && e.getState() == State.DOWN){
+                e.setTargetFloor(currentFloor);
+                e.setTargetFloor(targetFloor);
+                e.setStatus(targetDirection);
+                // need to fix the queue so that we pick up and drop off in descending order
+                // i.e. current floor (7) target floor (6, 2) new request (5, 3)
+                // queue should look like (6, 5, 3, 2)
+                e.fixQueue(targetDirection);
+                return e;
+            }
         }
         return null;
-    }
-
-    public void sendClosest(int targetFloor){
-        int closest = 0;
-        int min = floors;
-
-        for (int x = 0; x < elevatorList.size(); x++){
-            if (Math.abs(elevatorList.get(x).getCurrentFloor() - targetFloor) < min && smellTest(elevatorList.get(x), targetFloor)){
-                min = Math.min(min, Math.abs(elevatorList.get(x).getCurrentFloor() - targetFloor));
-                System.out.println("Setting min to: " + min + " for elevator: " + x);
-                closest = x;
-            }
-        }
-
-        System.out.println("Sending elevator: " + closest
-                + " coming from : " + elevatorList.get(closest).getCurrentFloor()
-                + " going to: " + targetFloor);
-
-
-        // if target floor is less than AND state = DOWN
-        if (targetFloor < elevatorList.get(closest).getCurrentFloor() && elevatorList.get(closest).getState().equals("DOWN")){
-            Elevator elevator = elevatorList.get(closest);
-            // list of targets already requested
-            List<Integer> targets = new ArrayList<>();
-            // newly tracked target
-            targets.add(targetFloor);
-            // currently tracked target
-            int temp = elevator.pollTargetFloor();
-            // empty rest of queue
-            while (temp != 0){
-                targets.add(temp);
-                temp = elevator.pollTargetFloor();
-            }
-            // sort descending order
-            targets.sort(Collections.reverseOrder());
-            // reset queue
-            elevator.clearTarget();
-            // add all targets back
-            for (int x : targets){
-                elevator.setTargetFloor(x);
-            }
-            // add base for return
-            elevator.setTargetFloor(0);
-            elevator.printQueue();
-        } else if (targetFloor > elevatorList.get(closest).getCurrentFloor() && elevatorList.get(closest).getState().equals("UP")){
-            Elevator elevator = elevatorList.get(closest);
-            // list of targets already requested
-            List<Integer> targets = new ArrayList<>();
-            // newly tracked target
-            targets.add(targetFloor);
-            // currently tracked target
-            int temp = elevator.pollTargetFloor();
-            // empty rest of queue
-            while (temp != 0){
-                targets.add(temp);
-                temp = elevator.pollTargetFloor();
-            }
-            // sort descending order
-            targets.sort(Collections.reverseOrder());
-            // reset queue
-            elevator.clearTarget();
-            // add all targets back
-            for (int x : targets){
-                elevator.setTargetFloor(x);
-            }
-            // add base for return
-            elevator.setTargetFloor(0);
-            elevator.printQueue();
-        } else {
-            elevatorList.get(closest).setTargetFloor(targetFloor);
-            elevatorList.get(closest).setTargetFloor(0);
-        }
-
-
-    }
-
-    private boolean smellTest(Elevator elevator, int targetFloor){
-        // need to check if we're already past a target, then send next closest
-        // if closest.status == down && target > current -> skip this one go to next
-        // if closest.status == up && target < current -> skip this one send the next
-        if ("DOWN".equals(elevator.getState()) && targetFloor > elevator.getCurrentFloor()){
-            return false;
-        }
-        if ("UP".equals(elevator.getState()) && targetFloor < elevator.getCurrentFloor()){
-            return false;
-        }
-
-        return true;
     }
 
     public void update(float tpf){
@@ -151,14 +143,15 @@ public class ElevatorManager {
     public String getInfo(){
         StringBuilder sb = new StringBuilder();
         for (int x = 0; x < elevatorList.size(); x++){
-            sb.append("Elevator: ").append(x).append("\n");
-            sb.append("Current Floor: ").append(elevatorList.get(x).getCurrentFloor()).append("\n");
-            sb.append("Target Floor: ").append(elevatorList.get(x).getTargetFloor()).append("\n");
-            sb.append("State: ").append(elevatorList.get(x).getState()).append("\n");
-            sb.append("-------------------------").append("\n");
+            Elevator e = elevatorList.get(x);
+            sb.append(e.toString());
         }
 
         return sb.toString();
+    }
+
+    public void shutdown() {
+        debugAlways(this.getInfo());
     }
 
     public int getFloors(){return floors;}

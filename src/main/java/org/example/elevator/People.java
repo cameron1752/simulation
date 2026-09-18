@@ -23,6 +23,13 @@ public class People {
         start = System.currentTimeMillis();
     }
 
+    public People(int currentFloor, int targetFloor){
+        this.currentFloor = currentFloor;
+        this.targetFloor = targetFloor;
+
+        start = System.currentTimeMillis();
+    }
+
     public int getCurrentFloor(){
         if (onElevator){
             return elevator.getCurrentFloor();
@@ -39,11 +46,7 @@ public class People {
         this.elevator = elevator;
     }
     public Elevator getElevator(){
-        if (this.elevator == null){
-            return null;
-        } else {
-            return this.elevator;
-        }
+       return this.elevator;
     }
     public long getStart(){return start;}
     public boolean isArrived(){
@@ -69,11 +72,10 @@ public class People {
     @Override
     public String toString() {
         return "People{" +
-                "currentFloor=" + currentFloor +
-                ", targetFloor=" + targetFloor +
-                ", onElevator=" + onElevator +
-                ", isArrived=" + arrived +
-                ", direction=" + direction() +
-                "} \n";
+                "currentFloor=" + currentFloor + "\n" +
+                ", targetFloor=" + targetFloor + "\n" +
+                ", onElevator=" + onElevator + "\n" +
+                ", isArrived=" + arrived + "\n" +
+                ", direction=" + direction() + "}\n";
     }
 }
