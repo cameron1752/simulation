@@ -13,8 +13,8 @@ public class RocketSimulation extends SimpleApplication {
     static AppSettings settings = new AppSettings(true);
 
     private static final int lifeSpan = 200;
-    private static final int children = 1000;
-    private static final Vector3f initialPosition = new Vector3f(100, 250, 0);
+    private static final int children = 10000;
+    private static final Vector3f initialPosition = new Vector3f(0, 250, 0);
     private Population population;
     private int lifeCount = 0;
     BitmapText debugText;

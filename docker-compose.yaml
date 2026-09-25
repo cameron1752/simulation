@@ -1,0 +1,108 @@
+x-app-image: &app-image
+  image: weather-app
+  build:
+    context: .
+
+x-trainer: &trainer
+  <<: *app-image
+  entrypoint: ["java", "-cp", "simulation-1.0.jar", "org.example.neuralnet.WeatherPredicter"]
+  profiles: ["training"]
+  depends_on:
+    db:
+      condition: service_healthy
+  restart: "no"
+  deploy:
+    resources:
+      limits:
+        cpus: "2.5"
+        memory: 4g
+  environment: &trainer-env
+    POSTGRES_URL: jdbc:postgresql://db:5432/cam
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: password
+    ROLE: worker
+    WORKER_COUNT: "4"
+    JAVA_TOOL_OPTIONS: -Xmx3g
+
+services:
+  server:
+    <<: *app-image
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - C:/Users/Cammy/Downloads/fd9bbf379ee8224647accd803d8b94ea/data.grib:/app/grib/data1.grib:ro
+      - C:/Users/Cammy/Downloads/549525878f0f2d3414e89885c645cb48/data.grib:/app/grib/data2.grib:ro
+      - ./weather_scaler.csv:/opt/app/weather_scaler.csv:ro
+    environment:
+      POSTGRES_URL: jdbc:postgresql://db:5432/cam
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      GRIB_PATHS: /app/grib/data1.grib,/app/grib/data2.grib
+      JAVA_TOOL_OPTIONS: -Xmx6g
+
+  coordinator:
+    <<: *trainer
+    entrypoint: ["java", "-cp", "simulation-1.0.jar", "org.example.neuralnet.WeatherPredicterCoordinator"]
+    volumes:
+      - C:/Users/Cammy/Downloads/fd9bbf379ee8224647accd803d8b94ea/data.grib:/app/grib/data1.grib:ro
+      - C:/Users/Cammy/Downloads/549525878f0f2d3414e89885c645cb48/data.grib:/app/grib/data2.grib:ro
+    environment:
+      <<: *trainer-env
+      ROLE: coordinator
+      GRIB_PATHS: /app/grib/data1.grib,/app/grib/data2.grib
+      JAVA_TOOL_OPTIONS: -Xmx6g
+    deploy:
+      resources:
+        limits:
+          cpus: "2.5"
+          memory: 8g
+
+  worker-0:
+    <<: *trainer
+    environment:
+      <<: *trainer-env
+      WORKER_ID: "0"
+
+  worker-1:
+    <<: *trainer
+    environment:
+      <<: *trainer-env
+      WORKER_ID: "1"
+
+  worker-2:
+    <<: *trainer
+    environment:
+      <<: *trainer-env
+      WORKER_ID: "2"
+
+  worker-3:
+    <<: *trainer
+    environment:
+      <<: *trainer-env
+      WORKER_ID: "3"
+
+  db:
+    image: postgres:18
+    restart: always
+    shm_size: 1g
+    volumes:
+      - db-data:/var/lib/postgresql
+      # run in name order on a fresh (empty) volume only: schema first, then seed data
+      - ./seed.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+    environment:
+      POSTGRES_DB: cam
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "cam"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:
