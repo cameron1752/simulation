@@ -13,6 +13,7 @@ public class NetworkTwo {
     private final List<float[]> zs = new ArrayList<>();
     private final List<float[]> activations = new ArrayList<>();
     private final Random random = new Random();
+    private static final String COORDINATOR = "coordinator";
 
     // slope for negative inputs in leaky ReLU
     private static final float LEAK = 0.01f;
@@ -275,6 +276,11 @@ public class NetworkTwo {
     }
 
     public void write(String instance, int round){
+        if (COORDINATOR.equals(instance)) {
+            System.out.println("Resetting weights from coordinator!");
+            // is coordinator instance, reset weights
+            DBManager.resetWeights();
+        }
         System.out.println("Writing weights for : " + instance + " in round " + round);
         DBManager.writeWeights(instance, round, toBytes(this));
     }

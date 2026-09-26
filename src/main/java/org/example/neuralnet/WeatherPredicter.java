@@ -21,8 +21,16 @@ public class WeatherPredicter {
 
     public static void main(String[] args) throws IOException, URISyntaxException, SQLException, InterruptedException {
 
-        int[] sizes = {150, 128, 64, 32, 24};
         String instance_id = String.valueOf(UUID.randomUUID());
+        int start = Integer.parseInt(System.getenv("START_INDEX"));;
+        int offset = 4;
+
+        System.out.println("Instance with UUID: [" + instance_id + "] has start index of " + start);
+
+        System.out.println("Sleeping for 2.5 minutes");
+        Thread.sleep(150000);
+
+        int[] sizes = {150, 128, 64, 32, 24};
 
         NetworkTwo net = new NetworkTwo(sizes);
 
@@ -33,35 +41,34 @@ public class WeatherPredicter {
 
         // until we're able to read try and read
         scaler.read();
+
         int round = 1;
-        // training passes
+        int syncEvery = 5 * offset; // every 5 of MY pages = every 20 global pages
+
         for (int epoch = 0; epoch < 30; epoch++) {
             System.out.println("Starting pass: " + epoch);
-            // refresh loader
             DataLoader.reset();
-
-            // get first slice of data
             getData();
 
-            // until we're through with the table
             while (!trainingData.isEmpty()) {
                 int page = DataLoader.count - 1;
-                scaler.transform(trainingData);
-                scaler.transform(testData);
-                Collections.shuffle(trainingData);
-                net.SDG(trainingData, epoch, page, 64, .01f, testData, scaler);
-                getData();
 
-                // determine how many times / when to refresh weights
-                if (DataLoader.count % 5 == 0){
+                if (page % offset == start) {
+                    System.out.println("Instance [" + instance_id + "] start " + start + " processing page: " + page);
+                    scaler.transform(trainingData);
+                    scaler.transform(testData);
+                    Collections.shuffle(trainingData);
+                    net.SDG(trainingData, epoch, page, 64, .01f, testData, scaler);
+                }
+
+                if ((page + 1) % syncEvery == 0) {
                     net.write(instance_id, round);
                     net.read(round);
                     round++;
                 }
-            }
 
-            // save the weights / biases after each pass
-            net.save(savePath);
+                getData();
+            }
         }
 
 //        DigitCanvas.launch(net);

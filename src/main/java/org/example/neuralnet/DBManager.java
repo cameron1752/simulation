@@ -25,7 +25,10 @@ public class DBManager {
     private static final String COLUMNS =
             "latitude, longitude, observed_at, temperature_f, pressure_hpa, precipitation_mm";
 
-    private static boolean readyForAverage = true;
+    private static final String INSERT_WEIGHTS = "INSERT INTO curvy_dolphin.model_weights (instance, round, weights) VALUES (?, ?, ?) "
+            + "ON CONFLICT (instance, round) DO UPDATE SET weights = EXCLUDED.weights, updated_at = now()";
+    private static final String RESET_WEIGHTS = "DELETE FROM curvy_dolphin.model_weights;";
+    private static final String RESET_SCALER = "DELETE FROM curvy_dolphin.model_scaler;";
 
     // append: skip rows that already exist (needs the unique constraint)
     private static final String INSERT_FROM_STAGING_SQL =
@@ -206,23 +209,10 @@ public class DBManager {
         return rows;
     }
 
-
-    public static void insertRecord(double latitude,
-                             double longitude,
-                             String observedAt,
-                             float temperatureF,
-                             float pressureHpa,
-                             float precipitationMm){
-
-        toBeInserted.add(new Row(observedAt, temperatureF, pressureHpa, precipitationMm, latitude, longitude));
-
-    }
-
+    // method to write a networks weights into the database table for distribution
     public static void writeWeights(String instance, int round, byte[] weights){
-        String sql = "INSERT INTO curvy_dolphin.model_weights (instance, round, weights) VALUES (?, ?, ?) "
-                + "ON CONFLICT (instance, round) DO UPDATE SET weights = EXCLUDED.weights, updated_at = now()";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+            PreparedStatement ps = conn.prepareStatement(INSERT_WEIGHTS)) {
             ps.setString(1, instance);
             ps.setInt(2, round);
             ps.setBytes(3, weights);
@@ -232,12 +222,31 @@ public class DBManager {
         }
     }
 
+    // method to reset the weights between launches
+    public static void resetWeights(){
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement ps = conn.prepareStatement(RESET_WEIGHTS)) {
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // method to reset the scaler values for each round / reset
+    public static void resetScaler(){
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement ps = conn.prepareStatement(RESET_SCALER)) {
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void average(int round) {
         // take all weights from table
         // average and re-insert
-        // delete others
         String select = "SELECT weights FROM curvy_dolphin.model_weights "
-                + "WHERE round = ? AND instance LIKE 'worker-%'";
+                + "WHERE round = ?;";
         String upsert = "INSERT INTO curvy_dolphin.model_weights (instance, round, weights) VALUES ('coordinator', ?, ?) "
                 + "ON CONFLICT (instance, round) DO UPDATE SET weights = EXCLUDED.weights, updated_at = now()";
 
@@ -262,7 +271,7 @@ public class DBManager {
             for (int i = 0; i < sum.length; i++) avg[i] = (float) (sum[i] / workers);
 
             try (PreparedStatement ps = conn.prepareStatement(upsert)) {
-                ps.setInt(1, round + 1);
+                ps.setInt(1, round);
                 ps.setBytes(2, floatsToBytes(avg));
                 ps.executeUpdate();
             }
@@ -297,11 +306,8 @@ public class DBManager {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()){
                     result = rs.getInt(1);
-                    if (result == instanceCount){
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    System.out.println("Found : " + result + " weights for round " + round);
+                    return result == instanceCount;
                 } else {
                     return false;
                 }
@@ -380,6 +386,9 @@ public class DBManager {
                         scaler.mean[g] = rs.getDouble(2);
                         scaler.std[g]  = rs.getDouble(3);
                         found++;
+                    }
+                    if (found > 0){
+                        return;
                     }
                 }
             }

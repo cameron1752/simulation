@@ -17,6 +17,7 @@ public class Scaler {
 
     /** Clears the running statistics so a new fitting pass can start. */
     void reset() {
+        DBManager.resetScaler();
         for (int g = 0; g < GROUPS.length; g++) {
             runCount[g] = 0;
             runMean[g] = 0;

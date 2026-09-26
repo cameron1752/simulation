@@ -65,24 +65,28 @@ services:
     environment:
       <<: *trainer-env
       WORKER_ID: "0"
+      START_INDEX: "0"
 
   worker-1:
     <<: *trainer
     environment:
       <<: *trainer-env
       WORKER_ID: "1"
+      START_INDEX: "1"
 
   worker-2:
     <<: *trainer
     environment:
       <<: *trainer-env
       WORKER_ID: "2"
+      START_INDEX: "2"
 
   worker-3:
     <<: *trainer
     environment:
       <<: *trainer-env
       WORKER_ID: "3"
+      START_INDEX: "3"
 
   db:
     image: postgres:18
